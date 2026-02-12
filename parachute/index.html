@@ -464,7 +464,6 @@
     <div id="setup-screen" class="screen">
       <h2>難易度を選んでね</h2>
 
-
       <div style="margin:15px;">
         <label>学年: </label>
         <select id="grade-select">
@@ -903,8 +902,21 @@ function endGame(){
   document.getElementById('result-msg').innerText="";
   document.getElementById('answer-display').innerHTML="";
 
+  /* ★ここだけ追加（他はそのまま）
+     - closeがブロックされる環境でも、強めに閉じにいく
+     - それでも無理なら about:blank にしてから再度close
+  */
   try { window.close(); } catch(e) {}
-  setTimeout(() => { window.open('', '_self'); window.close(); }, 0);
+
+  setTimeout(() => {
+    try { window.open('', '_self'); window.close(); } catch(e) {}
+
+    setTimeout(() => {
+      try { window.location.replace('about:blank'); } catch(e) {}
+      setTimeout(() => { try { window.close(); } catch(e) {} }, 50);
+    }, 50);
+
+  }, 0);
 }
 
 /* ==========================
