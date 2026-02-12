@@ -1,0 +1,1 @@
+# itsujimoto1916-hash.github.io
