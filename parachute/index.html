@@ -1,0 +1,1648 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ヘルプ ミスター・パラシュートマン</title>
+  <style>
+    body{
+      background: linear-gradient(to bottom, #4facfe 0%, #00f2fe 100%);
+      color:#333;
+      font-family:'Verdana','Arial',sans-serif;
+      margin:0;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      height:100vh;
+      user-select:none;
+    }
+
+    #game-container{
+      position:relative;
+      width:800px;
+      height:600px;
+      border:5px solid #fff;
+      border-radius:15px;
+      background-color: rgba(255,255,255,0.1);
+      box-shadow:0 10px 30px rgba(0,0,0,0.2);
+      margin-top:20px;
+      overflow:hidden;
+    }
+
+    .cloud{
+      position:absolute;
+      background:#fff;
+      border-radius:100px;
+      opacity:0.8;
+      animation: floatCloud linear infinite;
+      z-index: 2;
+    }
+    .cloud::after,.cloud::before{
+      content:'';
+      position:absolute;
+      background:#fff;
+      border-radius:50%;
+    }
+    .cloud::after{width:40px;height:40px;top:-20px;left:15px;}
+    .cloud::before{width:50px;height:50px;top:-30px;left:35px;}
+    @keyframes floatCloud{
+      from{ transform: translateX(850px); }
+      to{ transform: translateX(-150px); }
+    }
+
+    #ui-layer{
+      position:absolute;
+      top:0; left:0;
+      width:100%; height:100%;
+      z-index:30;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      pointer-events:none;
+    }
+    .screen{
+      background:rgba(255,255,255,0.95);
+      padding:30px;
+      border-radius:20px;
+      text-align:center;
+      pointer-events:auto;
+      box-shadow:0 5px 15px rgba(0,0,0,0.2);
+      display:none;
+      border:3px solid #4facfe;
+      min-width: 520px;
+    }
+    .screen.active{display:block;}
+    h1{color:#007bff;margin-bottom:10px;}
+    p{font-size:18px;color:#555;}
+    button{
+      background: linear-gradient(to right, #ff7e5f, #feb47b);
+      color:white;
+      border:none;
+      padding:12px 30px;
+      font-size:20px;
+      font-weight:bold;
+      cursor:pointer;
+      margin:10px;
+      border-radius:50px;
+      box-shadow:0 4px 6px rgba(0,0,0,0.1);
+      transition: transform 0.1s;
+    }
+    button:hover{transform:scale(1.05);}
+    button:active{transform:scale(0.95);}
+    select, input[type="text"]{
+      padding:5px;
+      font-size:16px;
+      border-radius:5px;
+      border:1px solid #ccc;
+    }
+
+    /* 海 */
+    #sea{
+      position:absolute;
+      left:0;
+      bottom:0;
+      width:100%;
+      height:120px;
+      background: linear-gradient(to bottom, #006994, #003366);
+      z-index:5;
+      overflow:hidden;
+    }
+    .wave{
+      position:absolute;
+      top:-20px;
+      width:200%;
+      height:40px;
+      background:url('data:image/svg+xml;utf8,<svg viewBox="0 0 1200 120" xmlns="http://www.w3.org/2000/svg"><path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" fill="white" fill-opacity="0.3"/></svg>');
+      background-size:50% 100%;
+      animation: waveMove 5s linear infinite;
+    }
+    .wave:nth-child(2){
+      top:-15px;
+      opacity:0.5;
+      animation: waveMove 7s linear infinite reverse;
+    }
+    @keyframes waveMove{
+      from{ transform: translateX(0); }
+      to{ transform: translateX(-50%); }
+    }
+
+    /* Canvas */
+    #canvas-layer{
+      position:absolute;
+      top:0; left:0;
+      z-index:10;
+    }
+
+    #word-display{
+      position:absolute;
+      top:45%;
+      right:50px;
+      transform: translateY(-50%);
+      display:flex;
+      gap:10px;
+      z-index:20;
+    }
+    .letter-box{
+      width:45px;
+      height:45px;
+      background:#fff;
+      border:3px solid #007bff;
+      border-radius:8px;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      font-size:28px;
+      font-weight:bold;
+      color:#333;
+      box-shadow:2px 2px 5px rgba(0,0,0,0.2);
+    }
+
+    /* HELPボタン */
+    #help-container{
+      position:absolute;
+      top:20px;
+      left:20px;
+      display:flex;
+      flex-direction:column;
+      gap:15px;
+      z-index:40;
+      pointer-events:auto;
+    }
+    .help-btn{
+      background: linear-gradient(to bottom, #f1c40f, #f39c12);
+      color:#fff;
+      border:2px solid #fff;
+      padding:10px 18px;
+      font-size:16px;
+      font-weight:bold;
+      border-radius:30px;
+      cursor:pointer;
+      box-shadow:0 4px 0 #d35400, 0 5px 10px rgba(0,0,0,0.3);
+      transition: transform 0.1s, box-shadow 0.1s;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      width: fit-content;
+    }
+    .help-btn:hover{ transform: translateY(2px); box-shadow:0 2px 0 #d35400, 0 3px 5px rgba(0,0,0,0.3); }
+    .help-btn:active{ transform: translateY(4px); box-shadow:none; }
+    .help-icon{ font-size:22px; }
+
+    /* 入力エリア */
+    #input-area{
+      position:absolute;
+      bottom:150px;
+      width:100%;
+      text-align:center;
+      z-index:25;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+    }
+    #input-message{
+      color:#fff;
+      text-shadow:1px 1px 2px #000, -1px -1px 2px #000;
+      font-weight:bold;
+      font-size:20px;
+      margin-bottom:10px;
+      height:30px;
+      line-height:30px;
+      transition: all 0.3s;
+    }
+    #input-controls{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    #letter-input{
+      font-size:24px;
+      width:50px;
+      text-align:center;
+      border:3px solid #fff;
+      border-radius:10px;
+      padding:5px;
+      outline:none;
+      box-shadow:0 2px 5px rgba(0,0,0,0.2);
+      background:#fff;
+    }
+
+    /* 落下アルファベット */
+    .falling-letter{
+      position:absolute;
+      color:#ff4757;
+      font-size:30px;
+      font-weight:bold;
+      text-shadow:1px 1px 0 #fff;
+      animation: fallToSea 1s ease-in forwards;
+      z-index:15;
+    }
+    @keyframes fallToSea{
+      0%{ top:45%; transform: rotate(0deg); }
+      100%{ top:80%; transform: rotate(360deg); }
+    }
+    .floating-letter{
+      position:absolute;
+      color:#ff4757;
+      font-size:30px;
+      font-weight:bold;
+      text-shadow:1px 1px 0 #fff;
+      top:80%;
+      z-index:14;
+      animation: floatOnSea 3s ease-in-out infinite alternate;
+    }
+    @keyframes floatOnSea{
+      0%{ transform: translateY(0) rotate(0deg); }
+      100%{ transform: translateY(-15px) rotate(10deg); }
+    }
+
+    /* Bird layer */
+    #bird-layer{
+      position:absolute;
+      top:0; left:0;
+      width:100%;
+      height:100%;
+      pointer-events:none;
+      z-index:22;
+    }
+    .helper-bird{
+      position:absolute;
+      top:90px;
+      right:-220px;
+      width:120px;
+      height:90px;
+      background-size:contain;
+      background-repeat:no-repeat;
+      background-position:center;
+      animation: flyAcross 4s linear forwards;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
+    }
+    @keyframes flyAcross{
+      0%{ right:-220px; transform: translateY(0); }
+      25%{ transform: translateY(18px); }
+      50%{ transform: translateY(-10px); }
+      75%{ transform: translateY(10px); }
+      100%{ right:110%; transform: translateY(0); }
+    }
+    .bird-gift{
+      position:absolute;
+      color:#2ed573;
+      font-size:35px;
+      font-weight:bold;
+      text-shadow:2px 2px 0 #fff;
+      animation: dropGift 1s ease-in forwards;
+      z-index:21;
+    }
+    @keyframes dropGift{
+      0%{ top:160px; transform: scale(1); opacity:1; }
+      100%{ top:45%; transform: scale(1.2); opacity:0; }
+    }
+
+    .correct-answer{
+      color:#2ed573;
+      font-size:24px;
+      margin:15px 0;
+      font-weight:bold;
+    }
+    #quiz-word{
+      color:#007bff;
+      font-size:40px;
+      margin:10px 0;
+    }
+
+    /* ダイナマイトタイマー */
+    #timer-container{
+      position:absolute;
+      top:54px;            /* ここだけ変更：ライフ（❤）の下に来るように */
+      right:16px;
+      z-index:45;
+      display:none;
+      align-items:center;
+      gap:10px;
+      pointer-events:none;
+    }
+    #dynamite-img{
+      width:70px;
+      height:auto;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.35));
+      border-radius:10px;
+    }
+    #fuse-wrapper{
+      position:relative;
+      width:160px;
+      height:16px;
+      border:2px solid #fff;
+      border-radius:10px;
+      background: rgba(0,0,0,0.25);
+      overflow:hidden;
+      box-shadow:0 2px 6px rgba(0,0,0,0.2);
+    }
+    #fuse-bar{
+      position:absolute;
+      left:0; top:0;
+      height:100%;
+      width:100%;
+      background: linear-gradient(to right, #ffb142, #ff4757);
+      transform-origin:left center;
+      transform: scaleX(1);
+    }
+    #fuse-spark{
+      position:absolute;
+      right:-7px;
+      top:50%;
+      width:14px;
+      height:14px;
+      border-radius:50%;
+      transform: translateY(-50%);
+      background: radial-gradient(circle, #ffffff 0%, #ffdd59 35%, #ff4757 80%);
+      box-shadow: 0 0 10px #ffd32a, 0 0 18px rgba(255, 211, 42, 0.8);
+    }
+    #timer-text{
+      font-size:20px;
+      font-weight:bold;
+      color:#fff;
+      text-shadow: 1px 1px 2px #000;
+      min-width:70px;
+      text-align:right;
+    }
+    #timer-container.timer-danger #fuse-wrapper{ border-color:#ff4757; }
+    #timer-container.timer-danger #timer-text{ color:#ff4757; }
+
+    /* 衝撃線（集中線） */
+    #impact-layer{
+      position:absolute;
+      inset:0;
+      z-index:60;
+      pointer-events:none;
+      display:none;
+    }
+    #impact-layer.shake{
+      animation: screenShake 0.15s linear;
+    }
+    @keyframes screenShake{
+      0%{ transform: translate(0,0); }
+      20%{ transform: translate(-6px, 3px); }
+      40%{ transform: translate(6px, -3px); }
+      60%{ transform: translate(-4px, -2px); }
+      80%{ transform: translate(4px, 2px); }
+      100%{ transform: translate(0,0); }
+    }
+
+    /* ライフ（❤） */
+    #life-container{
+      position:absolute;
+      top:16px;            /* ここだけ変更：タイマーの上（右上） */
+      right:16px;          /* ここだけ変更 */
+      left:auto;           /* ここだけ変更 */
+      transform:none;      /* ここだけ変更 */
+      z-index:46;
+      display:none;
+      gap:8px;
+      pointer-events:none;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35));
+    }
+    .life-heart{
+      font-size:28px;
+      line-height:1;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.35);
+    }
+    .life-heart.off{
+      opacity:0.25;
+      filter: grayscale(100%);
+    }
+  </style>
+</head>
+<body>
+
+<div id="game-container">
+  <div class="cloud" style="top:50px;width:100px;height:40px;animation-duration:20s;animation-delay:-5s;"></div>
+  <div class="cloud" style="top:150px;width:140px;height:60px;animation-duration:25s;"></div>
+  <div class="cloud" style="top:80px;width:80px;height:30px;animation-duration:18s;animation-delay:-10s;"></div>
+
+  <canvas id="canvas-layer" width="800" height="600"></canvas>
+  <div id="bird-layer"></div>
+  <div id="impact-layer"></div>
+
+  <div id="word-display"></div>
+  <div id="help-container"></div>
+
+  <!-- ダイナマイト（60秒） -->
+  <div id="timer-container">
+    <img id="dynamite-img" alt="dynamite"
+      src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNTYiIGhlaWdodD0iMjU2IiB2aWV3Qm94PSIwIDAgMjU2IDI1NiI+CjxkZWZzPgogIDxyYWRpYWxHcmFkaWVudCBpZD0iaCIgY3g9IjM1JSIgY3k9IjMwJSIgcj0iNzAlIj4KICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIwLjM1Ii8+CiAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmZmZmZmYiIHN0b3Atb3BhY2l0eT0iMCIvPgogIDwvcmFkaWFsR3JhZGllbnQ+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJmdXNlIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMCI+CiAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiM4YjVlM2MiLz4KICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzVhM2EyMyIvPgogIDwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPHJlY3Qgd2lkdGg9IjI1NiIgaGVpZ2h0PSIyNTYiIGZpbGw9Im5vbmUiLz4KPHBhdGggZD0iTTU2IDU0IEM0MCAzMCwgNjggMjAsIDc4IDQwIEM4NiA1NiwgMTEwIDQyLCAxMDAgMjYiIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNmdXNlKSIgc3Ryb2tlLXdpZHRoPSIxMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDEwMiAyNCkiPgogIDxjaXJjbGUgcj0iMTAiIGZpbGw9IiNmZmQzMmEiLz4KICA8Y2lyY2xlIHI9IjYiIGZpbGw9IiNmZmYiLz4KICA8cGF0aCBkPSJNMCAyMiBMNiAxMCBMMjAgOCBMOCAwIEwxMiAtMTQgTDAgLTYgTC0xMiAtMTQgTC04IDAgTC0yMCAtOCBMLTYgLTEwIFoiIGZpbGw9IiNmZjlmMWEiIG9wYWNpdHk9IjAuOSIvPgo8L2c+CjxjaXJjbGUgY3g9IjE1MCIgY3k9IjE1MCIgcj0iODYiIGZpbGw9IiMwZjE0MWIiLz4KPGNpcmNsZSBjeD0iMTUwIiBjeT0iMTUwIiByPSI4NiIgZmlsbD0idXJsKCNnKSIvPgo8Y2lyY2xlIGN4PSIxNTAiIGN5PSIxNTAiIHI9Ijg2IiBmaWxsPSJub25lIiBzdHJva2U9IiMxMDE1MWQiIHN0cm9rZS13aWR0aD0iOCIvPgo8cGF0aCBkPSJNNzggOTAgTDExMCA3MCBMMTI4IDk0IEw5NiAxMTQgWiIgZmlsbD0iIzNiNDY1NCIgc3Ryb2tlPSIjMWQyMzJiIiBzdHJva2Utd2lkdGg9IjYiIC8+Cjwvc3ZnPg==" />
+    <div id="fuse-wrapper">
+      <div id="fuse-bar"><div id="fuse-spark"></div></div>
+    </div>
+    <div id="timer-text">60.0</div>
+  </div>
+
+  <!-- ライフ（❤） -->
+  <div id="life-container"></div>
+
+  <div id="sea">
+    <div class="wave"></div>
+    <div class="wave"></div>
+  </div>
+
+  <div id="input-area" style="display:none;">
+    <p id="input-message">アルファベットを入力して救出しよう！</p>
+    <div id="input-controls">
+      <input type="text" id="letter-input" maxlength="1" autofocus>
+      <button onclick="submitLetter()" style="padding:5px 15px;font-size:16px;margin-left:10px;">決定</button>
+    </div>
+  </div>
+
+  <div id="ui-layer">
+    <div id="title-screen" class="screen active">
+      <h1 style="font-size:40px;">HELP! Parachute Man</h1>
+      <canvas id="title-canvas" width="250" height="250" style="margin:10px auto;display:block;"></canvas>
+      <button onclick="initAudioAndShowSetup()">ゲームスタート</button>
+    </div>
+
+    <div id="setup-screen" class="screen">
+      <h2>難易度を選んでね</h2>
+
+
+      <div style="margin:15px;">
+        <label>学年: </label>
+        <select id="grade-select">
+          <option value="1">中学1年 (Basic)</option>
+          <option value="2">中学2年 (Standard)</option>
+          <option value="3">中学3年 (Advanced)</option>
+        </select>
+      </div>
+
+      <div style="margin:15px;">
+        <label>単語の長さ: </label>
+        <select id="length-select">
+          <option value="random">ランダム</option>
+          <option value="3">3文字</option>
+          <option value="4">4文字</option>
+          <option value="5">5文字</option>
+          <option value="6">6文字</option>
+        </select>
+      </div>
+
+      <button onclick="startGame()">レスキュー開始！</button>
+    </div>
+
+    <div id="quiz-screen" class="screen">
+      <h2>完成！この単語の意味は？</h2>
+      <h1 id="quiz-word">WORD</h1>
+      <div id="quiz-options"></div>
+    </div>
+
+    <div id="result-screen" class="screen">
+      <h1 id="result-title"></h1>
+      <div id="answer-display"></div>
+      <p id="result-msg"></p>
+      <div id="play-again-area" style="display:none;margin-top:20px;">
+        <button onclick="showSetup()">もう一度遊ぶ</button>
+        <button onclick="endGame()" style="background:#ccc;">おしまい</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==========================
+   音
+========================== */
+let audioCtx;
+let isMuted = false;
+
+function initAudioAndShowSetup(){
+  if (!audioCtx){
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AudioContext();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  playTone(523.25, 'sine', 0.1);
+
+  lifeHearts = MAX_LIFE_HEARTS;
+  renderLifeHearts();
+
+  showSetup();
+}
+function playTone(freq, type, duration, delay=0){
+  if (!audioCtx || isMuted) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
+  gain.gain.setValueAtTime(0.12, audioCtx.currentTime + delay);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start(audioCtx.currentTime + delay);
+  osc.stop(audioCtx.currentTime + delay + duration);
+}
+function playNoise(duration){
+  if (!audioCtx || isMuted) return;
+  const bufferSize = audioCtx.sampleRate * duration;
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i=0;i<bufferSize;i++) data[i] = Math.random()*2-1;
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = buffer;
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+  gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + duration);
+  noise.connect(gain);
+  gain.connect(audioCtx.destination);
+  noise.start();
+}
+const Sounds = {
+  correct: () => { playTone(880,'sine',0.1); playTone(1760,'sine',0.15,0.1); },
+  wrong: () => { playTone(200,'sawtooth',0.1); playTone(150,'sawtooth',0.3,0.1); },
+  fanfare: () => {
+    playTone(523.25,'triangle',0.2,0);
+    playTone(659.25,'triangle',0.2,0.2);
+    playTone(783.99,'triangle',0.2,0.4);
+    playTone(1046.5,'triangle',0.6,0.6);
+  },
+  splash: () => playNoise(0.8),
+  bgmOver: () => { playTone(440,'sine',0.5,0); playTone(415,'sine',0.5,0.5); playTone(392,'sine',1.0,1.0); },
+  bird: () => { playTone(1200,'sine',0.1); playTone(1500,'sine',0.1,0.1); }
+};
+
+/* ==========================
+   辞書（内蔵）
+========================== */
+const wordList = [
+  { w: "famous", m: "有名な", g: 1 },
+  { w: "weekend", m: "週末に", g: 1 },
+  { w: "soon", m: "まもなく、すぐに", g: 1 },
+  { w: "still", m: "まだ", g: 1 },
+  { w: "popular", m: "人気の", g: 1 },
+  { w: "practice", m: "練習する", g: 1 },
+  { w: "during", m: "〜の間", g: 1 },
+  { w: "enjoy", m: "楽しむ", g: 1 },
+  { w: "favorite", m: "お気に入りの", g: 1 },
+  { w: "sell", m: "を売る", g: 1 },
+  { w: "bring", m: "持って来る", g: 1 },
+  { w: "expensive", m: "高価な", g: 1 },
+  { w: "join", m: "参加する", g: 1 },
+  { w: "so", m: "とても", g: 1 },
+  { w: "leave", m: "去る、残す", g: 1 },
+  { w: "enough", m: "十分な", g: 1 },
+  { w: "happen", m: "起こる", g: 1 },
+  { w: "different", m: "違った", g: 1 },
+  { w: "invite", m: "招待する", g: 1 },
+  { w: "plan", m: "計画する", g: 1 },
+  { w: "ask", m: "たずねる", g: 1 },
+  { w: "until", m: "まで、までは", g: 1 },
+  { w: "almost", m: "ほとんど", g: 1 },
+  { w: "sick", m: "病気の", g: 1 },
+  { w: "excited", m: "興奮した", g: 1 },
+  { w: "science", m: "科学", g: 1 },
+  { w: "library", m: "図書館", g: 1 },
+  { w: "visit", m: "訪問する", g: 1 },
+  { w: "cheap", m: "安い", g: 1 },
+  { w: "then", m: "そのとき", g: 1 },
+  { w: "show", m: "見せる", g: 1 },
+  { w: "instead", m: "そのかわりに", g: 1 },
+  { w: "garden", m: "庭", g: 1 },
+  { w: "meet", m: "会う", g: 1 },
+  { w: "by", m: "のそばに、によって", g: 1 },
+  { w: "stay", m: "滞在", g: 1 },
+  { w: "hope", m: "望む", g: 1 },
+  { w: "delicious", m: "おいしい", g: 1 },
+  { w: "together", m: "一緒に", g: 1 },
+  { w: "decide", m: "決心する", g: 1 },
+  { w: "later", m: "後に", g: 1 },
+  { w: "festival", m: "祭り", g: 1 },
+  { w: "vacation", m: "休暇", g: 1 },
+  { w: "own", m: "自分の", g: 1 },
+  { w: "noon", m: "正午", g: 1 },
+  { w: "important", m: "重要な", g: 1 },
+
+  { w: "like", m: "を好む", g: 2 },
+  { w: "play", m: "をする", g: 2 },
+  { w: "have", m: "をもっている", g: 2 },
+  { w: "know", m: "を知っている", g: 2 },
+  { w: "study", m: "を勉強する", g: 2 },
+  { w: "go", m: "行く", g: 2 },
+  { w: "come", m: "来る", g: 2 },
+  { w: "live", m: "住む", g: 2 },
+  { w: "want", m: "をほしい", g: 2 },
+  { w: "use", m: "を使う", g: 2 },
+  { w: "read", m: "を読む", g: 2 },
+  { w: "write", m: "を書く", g: 2 },
+  { w: "eat", m: "を食べる", g: 2 },
+  { w: "drink", m: "を飲む", g: 2 },
+  { w: "walk", m: "歩く", g: 2 },
+  { w: "run", m: "走る", g: 2 },
+  { w: "speak", m: "を話す", g: 2 },
+  { w: "talk", m: "おしゃべりする", g: 2 },
+  { w: "work", m: "働く", g: 2 },
+  { w: "help", m: "を手伝う", g: 2 },
+  { w: "do", m: "をする", g: 2 },
+  { w: "make", m: "を作る", g: 2 },
+  { w: "watch", m: "を見る", g: 2 },
+  { w: "look", m: "見る", g: 2 },
+  { w: "see", m: "を見る", g: 2 },
+  { w: "listen", m: "聞く", g: 2 },
+  { w: "enjoy", m: "を楽しむ", g: 2 },
+  { w: "start", m: "を始める", g: 2 },
+  { w: "stop", m: "をやめる", g: 2 },
+  { w: "visit", m: "を訪問する", g: 2 },
+  { w: "need", m: "を必要とする", g: 2 },
+  { w: "find", m: "を見つける", g: 2 },
+  { w: "teach", m: "を教える", g: 2 },
+  { w: "take", m: "を持っていく", g: 2 },
+  { w: "meet", m: "に会う", g: 2 },
+  { w: "get", m: "を手に入れる", g: 2 },
+  { w: "catch", m: "を捕まえる", g: 2 },
+  { w: "practice", m: "を練習する", g: 2 },
+  { w: "open", m: "を開ける", g: 2 },
+  { w: "close", m: "を閉める", g: 2 },
+  { w: "wash", m: "を洗う", g: 2 },
+  { w: "stand", m: "立つ", g: 2 },
+  { w: "sit", m: "座る", g: 2 },
+  { w: "sing", m: "を歌う", g: 2 },
+  { w: "sleep", m: "眠る", g: 2 },
+  { w: "say", m: "を言う", g: 2 },
+  { w: "clean", m: "をそうじする", g: 2 },
+  { w: "swim", m: "泳ぐ", g: 2 },
+  { w: "cook", m: "料理する", g: 2 },
+  { w: "try", m: "を試す", g: 2 },
+
+  { w: "be", m: "ある、いる", g: 3 },
+  { w: "of", m: "〜の", g: 3 },
+  { w: "are", m: "ある、いる", g: 3 },
+  { w: "for", m: "にとって", g: 3 },
+  { w: "with", m: "〜と一緒に", g: 3 },
+  { w: "on", m: "の上に", g: 3 },
+  { w: "say", m: "と書いてある", g: 3 },
+  { w: "by", m: "によって", g: 3 },
+  { w: "as", m: "のような", g: 3 },
+  { w: "can", m: "することがあり得る", g: 3 },
+  { w: "if", m: "もし〜ならば", g: 3 },
+  { w: "all", m: "全ての", g: 3 },
+  { w: "about", m: "およそ", g: 3 },
+  { w: "will", m: "〜するつもり", g: 3 },
+  { w: "think", m: "考える", g: 3 },
+  { w: "when", m: "するとき", g: 3 },
+  { w: "which", m: "どちらの", g: 3 },
+  { w: "people", m: "人々", g: 3 },
+  { w: "take", m: "取る", g: 3 },
+  { w: "into", m: "〜の中へ", g: 3 },
+  { w: "see", m: "見る", g: 3 },
+  { w: "come", m: "になる", g: 3 },
+  { w: "than", m: "よりも", g: 3 },
+  { w: "other", m: "ほかの", g: 3 },
+  { w: "more", m: "よりもっと", g: 3 },
+  { w: "these", m: "これらの", g: 3 },
+  { w: "way", m: "方法", g: 3 },
+  { w: "because", m: "だから、なので", g: 3 },
+  { w: "find", m: "を発見する", g: 3 },
+  { w: "well", m: "健康な", g: 3 },
+  { w: "tell", m: "伝える", g: 3 },
+  { w: "even", m: "でさえ", g: 3 },
+  { w: "life", m: "人生", g: 3 },
+  { w: "child", m: "子供", g: 3 },
+  { w: "work", m: "仕事", g: 3 },
+  { w: "may", m: "してもよい", g: 3 },
+  { w: "after", m: "〜の後に", g: 3 },
+  { w: "should", m: "すべきである", g: 3 },
+  { w: "call", m: "に電話をかける", g: 3 },
+  { w: "world", m: "世界", g: 3 },
+  { w: "over", m: "の向こうへ", g: 3 },
+  { w: "last", m: "最後の", g: 3 },
+  { w: "ask", m: "をたのむ", g: 3 },
+  { w: "feel", m: "感じる", g: 3 },
+  { w: "never", m: "今までに一度もしない", g: 3 },
+  { w: "become", m: "〜になる", g: 3 },
+  { w: "between", m: "と〜の間で", g: 3 },
+  { w: "most", m: "最も", g: 3 },
+  { w: "another", m: "もう1つ、一人の", g: 3 }
+];
+
+/* ==========================
+   ★整合性の要：ラウンド固定
+========================== */
+let roundWordObj = null;
+let guessedState = [];
+let lives = 10;
+
+let lifeHearts = 3;
+const MAX_LIFE_HEARTS = 3;
+
+const canvas = document.getElementById('canvas-layer');
+const ctx = canvas.getContext('2d');
+
+const centerX = 400;
+const chuteY = 80;
+let manY = 250;
+let isAngel = false;
+let angelY = 0;
+let animationId;
+
+/* サメ（2匹） */
+let sharkX1 = -200;
+let sharkX2 = 1000;
+const seaTop = 600 - 120;
+const sharkY = seaTop + 30;
+const sharkSpeed = 3;
+
+/* タイムアップで襲うサメ */
+let isTimeUpAttack = false;
+let attackSharkX = 900;
+let attackSharkY = sharkY;
+
+/* 60秒タイマー */
+const FUSE_DURATION = 60.0;
+let fuseRemaining = FUSE_DURATION;
+let fuseIntervalId = null;
+
+/* ==========================
+   ★ヘルプ鳥：①のコードの鳥Base64をそのまま採用
+========================== */
+const HELP_BIRD_DATA_URI =
+  "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMTYwIiB2aWV3Qm94PSIwIDAgMjQwIDE2MCI+CiAgPHJlY3Qgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxNjAiIGZpbGw9Im5vbmUiLz4KICA8IS0tIGJlYWsgLS0+CiAgPHBvbHlnb24gcG9pbnRzPSIzNCw4MCA5MCw2MCA5MCwxMDAiIGZpbGw9IiNmMmIyYjIiLz4KICA8IS0tIGJvZHkgLS0+CiAgPHBhdGggZD0iTTkwLDU1IEMxMjAsMzUgMTcwLDM1IDIwMCw2MCBDMjIwLDc1IDIyMCwxMDUgMTk4LDExNiBDMTcwLDEzMCAxMjAsMTMwIDk1LDExMCBDNzUsOTUgNzIsNzAgOTAsNTUgWiIKICAgICAgICBmaWxsPSIjZjhmMWM5Ii8+CiAgPCEtLSBleWUgLS0+CiAgPGNpcmNsZSBjeD0iMTEwIiBjeT0iNzgiIHI9IjYiIGZpbGw9IiMxMTEiLz4KICA8IS0tIHdpbmcgaGlnaGxpZ2h0IC0tPgogIDxwYXRoIGQ9Ik0xMjAsNjIgQzE0NSw1MCAxNzAsNTIgMTg2LDcwIEMxNzIsNjQgMTQ4LDY2IDEyNiw3OCBaIiBmaWxsPSIjZmZmZmZmIiBvcGFjaXR5PSIwLjU1Ii8+CiAgPCEtLSB0YWlsICh6aWd6YWcpIC0tPgogIDxwYXRoIGQ9Ik0xODIsNzQgTDIzMiw2MCBMMjA2LDg0IEwyMzUsOTYgTDE4NiwxMDAgTDIwNiw4MiBaIiBmaWxsPSIjMTExIiBvcGFjaXR5PSIwLjkiLz4KICA8IS0tIG5lY2sgbGluZSAtLT4KICA8cGF0aCBkPSJNOTIsODAgQzEwNSw3MCAxMTAsNzAgMTIwLDc2IiBmaWxsPSJub25lIiBzdHJva2U9IiNlN2RmYjUiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+Cjwvc3ZnPg==";
+
+/* ==========================
+   起動
+========================== */
+window.onload = function(){
+  drawTitleScreen();
+};
+
+function renderLifeHearts(){
+  const lc = document.getElementById('life-container');
+  if (!lc) return;
+  lc.innerHTML = '';
+  for (let i=0;i<MAX_LIFE_HEARTS;i++){
+    const span = document.createElement('span');
+    span.className = 'life-heart' + (i < lifeHearts ? '' : ' off');
+    span.textContent = '❤';
+    lc.appendChild(span);
+  }
+}
+
+/* タイトル描画 */
+function drawTitleScreen(){
+  const titleCanvas = document.getElementById('title-canvas');
+  if (!titleCanvas) return;
+  const titleCtx = titleCanvas.getContext('2d');
+  const cx = titleCanvas.width/2;
+  const cy = titleCanvas.height/2;
+  const scale = 0.7;
+
+  function drawPara(ctx2,x,y,sc){
+    ctx2.save(); ctx2.translate(x,y); ctx2.scale(sc,sc);
+    const r=160;
+    const colors=['#ff4757','#ffffff','#1e90ff','#ff4757','#ffffff','#1e90ff'];
+    for (let i=0;i<6;i++){
+      ctx2.beginPath();
+      ctx2.moveTo(0,0);
+      ctx2.arc(0,0,r,Math.PI+(Math.PI/6)*i,Math.PI+(Math.PI/6)*(i+1));
+      ctx2.lineTo(0,0);
+      ctx2.fillStyle=colors[i];
+      ctx2.fill();
+      ctx2.strokeStyle="#333";
+      ctx2.lineWidth=2;
+      ctx2.stroke();
+    }
+    ctx2.restore();
+  }
+  function drawChar(ctx2,x,y,sc,_lives){
+    ctx2.save(); ctx2.translate(x,y); ctx2.scale(sc,sc);
+    const d=ctx2;
+    d.fillStyle="#e74c3c";
+    d.beginPath(); d.moveTo(-25,-40); d.lineTo(-50,20); d.lineTo(-20,20); d.fill();
+    d.beginPath(); d.moveTo(25,-40); d.lineTo(50,20); d.lineTo(20,20); d.fill();
+
+    d.fillStyle="#1e90ff"; d.strokeStyle="#333"; d.lineWidth=2;
+    d.beginPath(); d.roundRect(-25,-40,50,70,10); d.fill(); d.stroke();
+
+    d.fillStyle="#ffd700"; d.beginPath(); d.arc(0,-15,15,0,Math.PI*2); d.fill(); d.stroke();
+    d.fillStyle="#c0392b"; d.font="bold 20px Arial"; d.textAlign="center"; d.fillText("M",0,-8);
+
+    d.fillStyle="#ffd700";
+    d.beginPath(); d.rect(-55,-60,25,25); d.fill(); d.stroke();
+    d.beginPath(); d.rect(30,-60,25,25); d.fill(); d.stroke();
+
+    d.strokeStyle="#1e90ff"; d.lineWidth=8;
+    d.beginPath(); d.moveTo(-20,-30); d.lineTo(-40,-45); d.stroke();
+    d.beginPath(); d.moveTo(20,-30); d.lineTo(40,-45); d.stroke();
+
+    d.lineWidth=2; d.strokeStyle="#333";
+    d.fillStyle="#ffd700";
+    d.beginPath(); d.roundRect(-25,30,20,30,5); d.fill(); d.stroke();
+    d.beginPath(); d.roundRect(5,30,20,30,5); d.fill(); d.stroke();
+
+    d.fillStyle="#ffeaa7";
+    d.beginPath(); d.arc(0,-60,30,0,Math.PI*2); d.fill(); d.stroke();
+
+    d.fillStyle="#333";
+    d.beginPath(); d.arc(0,-65,32,Math.PI,0); d.lineTo(30,-60); d.lineTo(-30,-60); d.fill();
+
+    d.fillStyle="#000";
+    d.beginPath(); d.arc(-10,-60,4,0,Math.PI*2); d.arc(10,-60,4,0,Math.PI*2); d.fill();
+    d.beginPath(); d.arc(0,-55,10,0.2,Math.PI-0.2); d.stroke();
+    ctx2.restore();
+  }
+  function drawStr(ctx2,x,y,manY2,sc,count){
+    ctx2.save();
+    ctx2.strokeStyle="#ddd"; ctx2.lineWidth=2;
+    const r=160*sc;
+    const targetY=manY2-60*sc;
+    for (let i=0;i<count;i++){
+      const angle=Math.PI+(Math.PI/11)*(i+1);
+      const startX=x+r*Math.cos(angle);
+      const startY=y+r*Math.sin(angle);
+      const endX=x+(i%2===0?-15*sc:15*sc);
+      const endY=targetY;
+      ctx2.beginPath(); ctx2.moveTo(startX,startY); ctx2.lineTo(endX,endY); ctx2.stroke();
+    }
+    ctx2.restore();
+  }
+
+  titleCtx.clearRect(0,0,titleCanvas.width,titleCanvas.height);
+  const chutePosY = cy - 40;
+  const charPosY = cy + 70;
+  drawPara(titleCtx,cx,chutePosY,scale);
+  drawStr(titleCtx,cx,chutePosY,charPosY,scale,10);
+  drawChar(titleCtx,cx,charPosY,scale,10);
+}
+
+/* 画面遷移 */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  if (id){
+    const t=document.getElementById(id);
+    if (t) t.classList.add('active');
+  }
+  if (id !== null){
+    document.getElementById('help-container').innerHTML='';
+    const timer=document.getElementById('timer-container');
+    if (timer) timer.style.display='none';
+    stopFuseTimer();
+  }
+
+  const lc = document.getElementById('life-container');
+  if (lc) lc.style.display = (id === null ? 'flex' : 'none');
+
+  if (id==='title-screen') drawTitleScreen();
+}
+function showSetup(){ showScreen('setup-screen'); }
+
+/* 終了 */
+function endGame(){
+  stopFuseTimer();
+  cancelAnimationFrame(animationId);
+
+  document.getElementById('play-again-area').style.display='none';
+  const title=document.getElementById('result-title');
+  title.innerText="See You Again!";
+  title.style.color="#ff6b6b";
+  document.getElementById('result-msg').innerText="";
+  document.getElementById('answer-display').innerHTML="";
+
+  try { window.close(); } catch(e) {}
+  setTimeout(() => { window.open('', '_self'); window.close(); }, 0);
+}
+
+/* ==========================
+   ゲーム開始
+========================== */
+function startGame(){
+  const grade = parseInt(document.getElementById('grade-select').value);
+  const lengthStr = document.getElementById('length-select').value;
+  const targetLength = (lengthStr==='random') ? null : parseInt(lengthStr);
+
+  let candidates = wordList.filter(item=>item.g===grade);
+  if (targetLength) candidates = candidates.filter(item=>item.w.length===targetLength);
+  if (candidates.length===0) candidates = wordList.slice();
+
+  roundWordObj = candidates[Math.floor(Math.random()*candidates.length)];
+
+  guessedState = Array(roundWordObj.w.length).fill(null);
+  lives = 10;
+  isAngel = false;
+  isTimeUpAttack = false;
+  manY = 250;
+  angelY = 400;
+
+  sharkX1 = -200;
+  sharkX2 = canvas.width + 200;
+  attackSharkX = canvas.width + 240;
+  attackSharkY = sharkY;
+
+  document.querySelectorAll('.floating-letter').forEach(el=>el.remove());
+  document.getElementById('bird-layer').innerHTML='';
+  hideImpact();
+
+  const msgEl=document.getElementById('input-message');
+  msgEl.innerText="アルファベットを入力して救出しよう！";
+  msgEl.style.color="#fff";
+  msgEl.style.fontSize="20px";
+
+  generateHelpButtons(roundWordObj.w.length);
+  buildWordDisplay();
+
+  renderLifeHearts();
+
+  showScreen(null);
+  document.getElementById('input-area').style.display='flex';
+  focusLetterInput();
+
+  gameLoop();
+  startFuseTimer();
+}
+
+/* フォーカス */
+function focusLetterInput(){
+  const input=document.getElementById('letter-input');
+  if (!input) return;
+  setTimeout(()=>{ input.focus(); }, 0);
+}
+
+/* HELPボタン生成 */
+function generateHelpButtons(wordLength){
+  const container = document.getElementById('help-container');
+  container.innerHTML = '';
+
+  let helpCount = 0;
+  if (wordLength >= 5) helpCount = 2;
+  else if (wordLength >= 3) helpCount = 1;
+
+  if (helpCount === 0) return;
+
+  for (let i = 0; i < helpCount; i++){
+    const btn = document.createElement('div');
+    btn.className = 'help-btn';
+    btn.innerHTML = '<span class="help-icon">🕊️</span> HELP';
+    btn.onclick = function(){ useHelp(this); };
+    container.appendChild(btn);
+  }
+}
+
+/* HELP使用 */
+function useHelp(btnElement){
+  if (lives<=0 || isAngel || isTimeUpAttack) return;
+  btnElement.remove();
+  lives--;
+  Sounds.wrong();
+
+  const msgEl=document.getElementById('input-message');
+  msgEl.innerText="ヒントをくれたけど、紐を切られた！";
+  msgEl.style.color="#ff7e5f";
+
+  focusLetterInput();
+
+  if (lives<=0){
+    triggerGameOver();
+    return;
+  }
+  triggerBirdHelp();
+}
+
+/* Birdヘルプ演出 */
+function triggerBirdHelp(){
+  if (isTimeUpAttack) return;
+  Sounds.bird();
+
+  const birdLayer=document.getElementById('bird-layer');
+  const bird=document.createElement('div');
+  bird.className='helper-bird';
+  bird.style.backgroundImage = `url("${HELP_BIRD_DATA_URI}")`;
+  birdLayer.appendChild(bird);
+
+  const targetWord = roundWordObj.w;
+  const emptyIndices=[];
+  guessedState.forEach((s,idx)=>{ if (s===null) emptyIndices.push(idx); });
+
+  if (emptyIndices.length>0){
+    const targetIndex = emptyIndices[Math.floor(Math.random()*emptyIndices.length)];
+    const charToReveal = targetWord[targetIndex];
+
+    setTimeout(()=>{
+      const gift=document.createElement('div');
+      gift.className='bird-gift';
+      gift.innerText=charToReveal;
+      gift.style.left='50%';
+      birdLayer.appendChild(gift);
+
+      setTimeout(()=>{
+        for (let i=0;i<targetWord.length;i++){
+          if (targetWord[i]===charToReveal) guessedState[i]=charToReveal;
+        }
+        buildWordDisplay();
+        Sounds.correct();
+        gift.remove();
+        checkWin();
+
+        document.getElementById('input-message').innerText="アルファベットを入力して救出しよう！";
+        document.getElementById('input-message').style.color="#fff";
+
+        focusLetterInput();
+      },1000);
+
+    },1500);
+  }
+
+  setTimeout(()=>{ bird.remove(); },4000);
+}
+
+/* ループ */
+function gameLoop(){
+  if (!isAngel && lives>0 && !isTimeUpAttack){
+    updateSharks();
+  }
+  drawGame();
+  if (!isAngel && !isTimeUpAttack){
+    animationId = requestAnimationFrame(gameLoop);
+  }
+}
+
+function updateSharks(){
+  sharkX1 += sharkSpeed;
+  if (sharkX1 > canvas.width + 200) sharkX1 = -200;
+
+  sharkX2 -= sharkSpeed;
+  if (sharkX2 < -200) sharkX2 = canvas.width + 200;
+}
+
+/* 描画 */
+function drawGame(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  if (!isAngel){
+    if (lives>0){
+      drawParachute(centerX, chuteY);
+      drawStrings(centerX, chuteY, manY, lives);
+    }
+    drawCharacter(centerX, manY, lives);
+
+    drawShark(sharkX1, sharkY, false, 0);
+    drawShark(sharkX2, sharkY, true, 0);
+  } else {
+    drawAngel(centerX, angelY);
+  }
+
+  if (isTimeUpAttack){
+    drawShark(attackSharkX, attackSharkY, true, attackMouthOpen);
+  }
+}
+
+/* サメ */
+let attackMouthOpen = 0;
+function drawShark(x,y,isFlipped=false, mouthOpen=0){
+  ctx.save();
+  ctx.translate(x,y);
+  const scale = 0.38;
+  ctx.scale(isFlipped ? -scale : scale, scale);
+
+  ctx.fillStyle="#7f8c8d";
+  ctx.beginPath();
+  ctx.moveTo(-180, 0);
+  ctx.quadraticCurveTo(-100, -60, 0, -70);
+  ctx.quadraticCurveTo(120, -70, 160, -20);
+  ctx.lineTo(100, 40);
+  ctx.quadraticCurveTo(0, 60, -100, 40);
+  ctx.quadraticCurveTo(-150, 20, -180, 0);
+  ctx.fill();
+
+  ctx.fillStyle="#7f8c8d";
+  ctx.beginPath(); ctx.moveTo(-30,-65); ctx.quadraticCurveTo(10,-190,50,-70); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(20,20); ctx.quadraticCurveTo(40,80,-30,40); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-180,0);
+  ctx.quadraticCurveTo(-220,-50,-240,-40);
+  ctx.quadraticCurveTo(-200,0,-240,40);
+  ctx.quadraticCurveTo(-220,50,-180,0);
+  ctx.fill();
+
+  ctx.strokeStyle="#546e7a"; ctx.lineWidth=2;
+  for (let i=0;i<3;i++){
+    ctx.beginPath();
+    ctx.moveTo(30+i*8, -10);
+    ctx.quadraticCurveTo(35+i*8, 10, 30+i*8, 30);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle="#000";
+  ctx.beginPath(); ctx.ellipse(110,-40,6,3,Math.PI/12,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle="#fff";
+  ctx.beginPath(); ctx.arc(112,-41,1.5,0,Math.PI*2); ctx.fill();
+
+  const jaw = Math.min(1, Math.max(0, mouthOpen));
+  const jawDrop = 10 * jaw;
+
+  ctx.fillStyle="#c0392b";
+  ctx.beginPath();
+  ctx.moveTo(160, -20);
+  ctx.lineTo(86, -10);
+  ctx.lineTo(100, 40);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(100, 40);
+  ctx.lineTo(88, 22 + jawDrop);
+  ctx.lineTo(160, -8 + jawDrop);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle="#fff";
+  ctx.beginPath();
+  for (let i=0;i<7;i++){
+    const tx = 150 - i*12;
+    ctx.lineTo(tx, -15);
+    ctx.lineTo(tx - 6, -3);
+  }
+  ctx.fill();
+
+  ctx.beginPath();//サメの歯
+  for (let i=0;i<6;i++){
+    const tx = 80 + i*10;//下の歯の位置
+    const baseY = 32 + jawDrop;
+    ctx.lineTo(tx, baseY);
+    ctx.lineTo(tx + 6, baseY - 14);//歯の尖具合
+  }
+  ctx.fill();
+
+  ctx.restore();
+}
+
+/* パラシュート */
+function drawParachute(x,y){
+  const r=160;
+  const colors=['#ff4757','#ffffff','#1e90ff','#ff4757','#ffffff','#1e90ff'];
+  for (let i=0;i<6;i++){
+    ctx.beginPath();
+    ctx.moveTo(x,y);
+    ctx.arc(x,y,r,Math.PI+(Math.PI/6)*i,Math.PI+(Math.PI/6)*(i+1));
+    ctx.lineTo(x,y);
+    ctx.fillStyle=colors[i];
+    ctx.fill();
+    ctx.strokeStyle="#333";
+    ctx.lineWidth=2;
+    ctx.stroke();
+  }
+}
+function drawStrings(chuteX,chuteY2,manY2,stringCount){
+  ctx.strokeStyle="#ddd";
+  ctx.lineWidth=2;
+  const r=160;
+  for (let i=0;i<stringCount;i++){
+    const angle=Math.PI+(Math.PI/11)*(i+1);
+    const startX=chuteX+r*Math.cos(angle);
+    const startY=chuteY2+r*Math.sin(angle);
+    const endX=chuteX+(i%2===0?-15:15);
+    const endY=manY2-60;
+    ctx.beginPath();
+    ctx.moveTo(startX,startY);
+    ctx.lineTo(endX,endY);
+    ctx.stroke();
+  }
+}
+
+/* キャラ */
+function drawCharacter(x,y,currentLives){
+  ctx.fillStyle="#e74c3c";
+  ctx.beginPath(); ctx.moveTo(x-25,y-40); ctx.lineTo(x-50,y+20); ctx.lineTo(x-20,y+20); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x+25,y-40); ctx.lineTo(x+50,y+20); ctx.lineTo(x+20,y+20); ctx.fill();
+
+  ctx.fillStyle="#1e90ff";
+  ctx.strokeStyle="#333";
+  ctx.lineWidth=2;
+  ctx.beginPath(); ctx.roundRect(x-25,y-40,50,70,10); ctx.fill(); ctx.stroke();
+
+  ctx.fillStyle="#ffd700";
+  ctx.beginPath(); ctx.arc(x,y-15,15,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle="#c0392b";
+  ctx.font="bold 20px Arial";
+  ctx.textAlign="center";
+  ctx.fillText("M",x,y-8);
+
+  ctx.fillStyle="#ffd700";
+  ctx.beginPath(); ctx.rect(x-55,y-60,25,25); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.rect(x+30,y-60,25,25); ctx.fill(); ctx.stroke();
+
+  ctx.strokeStyle="#1e90ff"; ctx.lineWidth=8;
+  ctx.beginPath(); ctx.moveTo(x-20,y-30); ctx.lineTo(x-40,y-45); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x+20,y-30); ctx.lineTo(x+40,y-45); ctx.stroke();
+
+  ctx.lineWidth=2; ctx.strokeStyle="#333";
+  ctx.fillStyle="#ffd700";
+  ctx.beginPath(); ctx.roundRect(x-25,y+30,20,30,5); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.roundRect(x+5,y+30,20,30,5); ctx.fill(); ctx.stroke();
+
+  ctx.fillStyle="#ffeaa7";
+  ctx.beginPath(); ctx.arc(x,y-60,30,0,Math.PI*2); ctx.fill(); ctx.stroke();
+
+  ctx.fillStyle="#333";
+  ctx.beginPath(); ctx.arc(x,y-65,32,Math.PI,0); ctx.lineTo(x+30,y-60); ctx.lineTo(x-30,y-60); ctx.fill();
+
+  ctx.fillStyle="#000";
+  if (currentLives>7){
+    ctx.beginPath(); ctx.arc(x-10,y-60,4,0,Math.PI*2); ctx.arc(x+10,y-60,4,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x,y-55,10,0.2,Math.PI-0.2); ctx.stroke();
+  } else if (currentLives>3){
+    ctx.beginPath(); ctx.arc(x-10,y-60,3,0,Math.PI*2); ctx.arc(x+10,y-60,3,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x,y-45,8,Math.PI+0.2,2*Math.PI-0.2); ctx.stroke();
+    ctx.fillStyle="#00a8ff"; ctx.beginPath(); ctx.arc(x+25,y-70,3,0,Math.PI*2); ctx.fill();
+  } else {
+    ctx.strokeStyle="#000";
+    ctx.beginPath(); ctx.moveTo(x-15,y-65); ctx.lineTo(x-5,y-60); ctx.lineTo(x-15,y-55); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x+15,y-65); ctx.lineTo(x+5,y-60); ctx.lineTo(x+15,y-55); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(x,y-45,6,8,0,0,Math.PI*2); ctx.fillStyle="#a22"; ctx.fill();
+    ctx.fillStyle="#00a8ff";
+    ctx.beginPath(); ctx.arc(x-20,y-50,4,0,Math.PI*2); ctx.arc(x+20,y-50,4,0,Math.PI*2); ctx.fill();
+  }
+}
+
+/* 天使 */
+function drawAngel(x,y){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.fillStyle="#fff";
+  ctx.strokeStyle="#ccc";
+  ctx.beginPath(); ctx.ellipse(-30,0,40,15,-0.5,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(30,0,40,15,0.5,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle="#ffd700"; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.ellipse(0,-50,20,5,0,0,Math.PI*2); ctx.stroke();
+
+  ctx.fillStyle="#fff";
+  ctx.strokeStyle="#333"; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,-30); ctx.lineTo(-15,20); ctx.lineTo(15,20); ctx.closePath(); ctx.fill(); ctx.stroke();
+
+  ctx.fillStyle="#ffeaa7";
+  ctx.beginPath(); ctx.arc(0,-30,15,0,Math.PI*2); ctx.fill(); ctx.stroke();
+
+  ctx.fillStyle="#000";
+  ctx.font="15px Arial";
+  ctx.textAlign="center";
+  ctx.fillText("^^",0,-28);
+  ctx.restore();
+}
+
+/* 単語表示 */
+function buildWordDisplay(){
+  const container=document.getElementById('word-display');
+  container.innerHTML='';
+  guessedState.forEach(ch=>{
+    const div=document.createElement('div');
+    div.className='letter-box';
+    div.innerText = ch ? ch : '';
+    container.appendChild(div);
+  });
+}
+
+/* 入力 */
+function submitLetter(){
+  if (isAngel || isTimeUpAttack) return;
+
+  const input=document.getElementById('letter-input');
+  const char=input.value.toLowerCase();
+  input.value='';
+  focusLetterInput();
+
+  if (!char.match(/[a-z]/)) return;
+  if (guessedState.includes(char)) return;
+
+  const targetWord = roundWordObj.w;
+  let hit=false;
+
+  for (let i=0;i<targetWord.length;i++){
+    if (targetWord[i]===char){
+      guessedState[i]=char;
+      hit=true;
+    }
+  }
+
+  buildWordDisplay();
+
+  if (hit){
+    Sounds.correct();
+    checkWin();
+  } else {
+    Sounds.wrong();
+    dropLetter(char);
+    lives--;
+    if (lives<=0) triggerGameOver();
+  }
+}
+document.getElementById('letter-input').addEventListener('keypress',(e)=>{
+  if (e.key==='Enter') submitLetter();
+});
+
+function checkWin(){
+  if (!guessedState.includes(null)){
+    setTimeout(startQuizPhase, 500);
+  }
+}
+
+function dropLetter(char){
+  const letter=document.createElement('div');
+  letter.innerText=char;
+  letter.className='falling-letter';
+  letter.style.left = (Math.random()*600+100) + 'px';
+  document.getElementById('game-container').appendChild(letter);
+  letter.addEventListener('animationend',()=>{
+    letter.className='floating-letter';
+    letter.style.left = (parseFloat(letter.style.left)+(Math.random()*40-20))+'px';
+    letter.style.top = (80+Math.random()*10)+'%';
+  }, { once:true });
+}
+
+/* クイズ */
+function startQuizPhase(){
+  stopFuseTimer();
+  cancelAnimationFrame(animationId);
+  document.getElementById('input-area').style.display='none';
+  document.getElementById('help-container').innerHTML='';
+  showScreen('quiz-screen');
+
+  document.getElementById('quiz-word').innerText = roundWordObj.w;
+  generateQuizOptions();
+}
+
+function generateQuizOptions(){
+  const container=document.getElementById('quiz-options');
+  container.innerHTML='';
+
+  const correctMeaning = roundWordObj.m;
+
+  let others = wordList.filter(w=>w.m!==correctMeaning);
+  others.sort(()=>Math.random()-0.5);
+
+  const options=[correctMeaning, others[0]?.m, others[1]?.m, others[2]?.m].filter(Boolean);
+  while (options.length<4) options.push(correctMeaning);
+  options.sort(()=>Math.random()-0.5);
+
+  options.forEach(opt=>{
+    const btn=document.createElement('button');
+    btn.innerText=opt;
+    btn.onclick=()=>checkQuizAnswer(opt===correctMeaning);
+    container.appendChild(btn);
+  });
+}
+
+function checkQuizAnswer(isCorrect){
+  if (isCorrect){
+    triggerWin();
+  } else {
+    Sounds.wrong();
+    lives--;
+    drawGame();
+    alert("Oops! 紐が切れちゃった！");
+    if (lives<=0) triggerGameOver();
+    else generateQuizOptions();
+  }
+}
+
+/* 勝利 */
+function triggerWin(){
+  stopFuseTimer();
+  cancelAnimationFrame(animationId);
+  Sounds.fanfare();
+  showScreen('result-screen');
+
+  const title=document.getElementById('result-title');
+  title.innerText="MISSION COMPLETE!";
+  title.style.color="#ff6b6b";
+
+  document.getElementById('answer-display').innerHTML =
+    `<div class="correct-answer">答え: ${roundWordObj.w}（${roundWordObj.m}）</div>`;
+
+  document.getElementById('result-msg').innerText="おめでとう！見事な救出劇だ！";
+
+  const fireworksCount = lives;
+  for (let i=0;i<fireworksCount;i++){
+    setTimeout(()=>createFirework(), i*300);
+  }
+  document.getElementById('play-again-area').style.display='block';
+}
+
+function createFirework(){
+  const fw=document.createElement('div');
+  fw.style.position='absolute';
+  fw.style.left=(20+Math.random()*60)+'%';
+  fw.style.top=(20+Math.random()*40)+'%';
+  fw.style.width='10px';
+  fw.style.height='10px';
+  fw.style.borderRadius='50%';
+  fw.style.background=`hsl(${Math.random()*360},100%,50%)`;
+  fw.style.boxShadow=`0 0 20px 5px ${fw.style.background}`;
+  fw.style.transition='all 0.5s ease-out';
+  document.getElementById('result-screen').appendChild(fw);
+  setTimeout(()=>{ fw.style.transform='scale(15)'; fw.style.opacity='0'; },50);
+  setTimeout(()=>fw.remove(),600);
+}
+
+/* ゲームオーバー */
+function triggerGameOver(){
+  stopFuseTimer();
+  cancelAnimationFrame(animationId);
+
+  lifeHearts = Math.max(0, lifeHearts - 1);
+  renderLifeHearts();
+
+  Sounds.splash();
+  setTimeout(Sounds.bgmOver, 1000);
+
+  document.getElementById('help-container').innerHTML='';
+  document.getElementById('input-area').style.display='none';
+
+  isAngel=true;
+  manY=400;
+  angelY=400;
+
+  function animateAngelRise(){
+    if (!isAngel) return;
+    angelY -= 2;
+    drawGame();
+    if (angelY > -100){
+      animationId = requestAnimationFrame(animateAngelRise);
+    } else {
+      showScreen('result-screen');
+
+      document.getElementById('answer-display').innerHTML =
+        `<div class="correct-answer">答え: ${roundWordObj.w}（${roundWordObj.m}）</div>`;
+
+      if (lifeHearts <= 0){
+        document.getElementById('result-title').innerText="GAME OVER";
+        document.getElementById('result-title').style.color="gray";
+        document.getElementById('result-msg').innerText="マッスルマンは星になったよ...";
+        document.getElementById('play-again-area').style.display='block';
+      } else {
+        document.getElementById('result-title').innerText="LIFE LOST!";
+        document.getElementById('result-title').style.color="#ff6b6b";
+        document.getElementById('result-msg').innerText=`残りライフ：${lifeHearts} もう一度チャレンジしよう！`;
+        document.getElementById('play-again-area').style.display='block';
+      }
+    }
+  }
+  animateAngelRise();
+}
+
+/* ==========================
+   ダイナマイト 60秒タイマー
+========================== */
+function startFuseTimer(){
+  stopFuseTimer();
+  isTimeUpAttack = false;
+  fuseRemaining = FUSE_DURATION;
+
+  const timer=document.getElementById('timer-container');
+  timer.style.display='flex';
+  timer.classList.remove('timer-danger');
+
+  updateFuseUI();
+
+  fuseIntervalId = setInterval(()=>{
+    if (isAngel || isTimeUpAttack) return;
+
+    fuseRemaining -= 0.1;
+    if (fuseRemaining < 0) fuseRemaining = 0;
+
+    updateFuseUI();
+
+    if (fuseRemaining <= 0){
+      triggerTimeUpAttack();
+    }
+  },100);
+}
+function stopFuseTimer(){
+  if (fuseIntervalId){
+    clearInterval(fuseIntervalId);
+    fuseIntervalId = null;
+  }
+}
+function updateFuseUI(){
+  const bar=document.getElementById('fuse-bar');
+  const text=document.getElementById('timer-text');
+  const timer=document.getElementById('timer-container');
+
+  const ratio=Math.max(0, Math.min(1, fuseRemaining / FUSE_DURATION));
+  bar.style.transform = `scaleX(${ratio})`;
+  text.innerText = fuseRemaining.toFixed(1);
+
+  if (fuseRemaining <= 5) timer.classList.add('timer-danger');
+  else timer.classList.remove('timer-danger');
+}
+
+/* ==========================
+   衝撃（集中線 + シェイク）
+========================== */
+function showImpact(cx, cy){
+  const layer = document.getElementById('impact-layer');
+  if (!layer) return;
+
+  const lines = 28;
+  const inner = 12;
+  const outer = 420;
+
+  const svgParts = [];
+  svgParts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">`);
+  svgParts.push(`<g stroke="rgba(255,0,0,0.9)" stroke-width="3" stroke-linecap="round">`);
+
+  for (let i=0;i<lines;i++){
+    const a = (Math.PI*2) * (i/lines);
+    const x1 = cx + Math.cos(a)*inner;
+    const y1 = cy + Math.sin(a)*inner;
+    const x2 = cx + Math.cos(a)*outer;
+    const y2 = cy + Math.sin(a)*outer;
+    svgParts.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`);
+  }
+
+  svgParts.push(`</g></svg>`);
+
+  layer.innerHTML = svgParts.join("");
+  layer.style.display = "block";
+
+  layer.classList.remove("shake");
+  void layer.offsetWidth;
+  layer.classList.add("shake");
+
+  setTimeout(()=>{ hideImpact(); }, 180);
+}
+function hideImpact(){
+  const layer = document.getElementById('impact-layer');
+  if (!layer) return;
+  layer.classList.remove("shake");
+  layer.style.display = "none";
+  layer.innerHTML = "";
+}
+
+/* ==========================
+   タイムアップ攻撃
+   - 1匹だけ
+   - 速度 70%
+   - 最後に「1秒後」衝撃線→ゲームオーバー
+========================== */
+function triggerTimeUpAttack(){
+  if (isAngel || isTimeUpAttack) return;
+  isTimeUpAttack = true;
+
+  stopFuseTimer();
+  cancelAnimationFrame(animationId);
+
+  document.getElementById('help-container').innerHTML='';
+  document.getElementById('input-area').style.display='none';
+
+  const startX = canvas.width + 240;
+  const startY = sharkY;
+  const targetX = centerX;
+  const targetY = manY;
+
+  attackSharkX = startX;
+  attackSharkY = startY;
+  attackMouthOpen = 0;
+
+  const startTime = performance.now();
+  const duration = 900 / 0.7;
+
+  Sounds.wrong();
+
+  function attackAnim(now){
+    const p = Math.min((now - startTime) / duration, 1);
+
+    const jump = Math.sin(p * Math.PI) * 140;
+
+    attackSharkX = startX + (targetX - startX) * p;
+    attackSharkY = startY + (targetY - startY) * p - jump;
+
+    attackMouthOpen = (p > 0.82) ? Math.min(1, (p - 0.82) / 0.18) : 0;
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    drawParachute(centerX, chuteY);
+    drawStrings(centerX, chuteY, manY, lives);
+    drawCharacter(centerX, manY, lives);
+
+    drawShark(sharkX1, sharkY, false, 0);
+    drawShark(sharkX2, sharkY, true, 0);
+
+    drawShark(attackSharkX, attackSharkY, true, attackMouthOpen);
+
+    if (p < 1){
+      requestAnimationFrame(attackAnim);
+    } else {
+      attackSharkX = targetX;
+      attackSharkY = targetY;
+      attackMouthOpen = 1;
+
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      drawParachute(centerX, chuteY);
+      drawStrings(centerX, chuteY, manY, lives);
+      drawCharacter(centerX, manY, lives);
+      drawShark(attackSharkX, attackSharkY, true, attackMouthOpen);
+
+      setTimeout(()=>{
+        showImpact(targetX, targetY);
+        setTimeout(()=>{ triggerGameOver(); }, 220);
+      }, 1000);
+    }
+  }
+
+  requestAnimationFrame(attackAnim);
+}
+</script>
+</body>
+</html>
